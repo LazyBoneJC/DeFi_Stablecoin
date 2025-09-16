@@ -96,6 +96,3 @@ A utility library designed to check the freshness of data from Chainlink price f
 The project includes deployment scripts written for Foundry. The `DeployDSC.s.sol` script orchestrates the deployment of both the `DecentralizedStableCoin` and `DSCEngine` contracts. It also sets up the Chainlink price feed addresses and transfers ownership of the DSC token to the newly deployed DSCEngine.
 
 <p align="right"><a href="\#readme-top">back to top</a></p>
-
-```
-```
