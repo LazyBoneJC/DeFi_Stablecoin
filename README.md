@@ -2,7 +2,11 @@
 
 <br />
 <div align="center"\>
-   <h3 align="center"\>Decentralized Stablecoin (DeFi Stablecoin)</h3>
+  <a href="https://github.com/LazyBoneJC/DeFi_Stablecoin">
+    <img src="https://github.com/LazyBoneJC/DeFi_Stablecoin/blob/main/pic/stablecoins.png" alt="Logo" width="600" height="400">
+  </a>
+
+<h3 align="center"\>Decentralized Stablecoin (DeFi Stablecoin)</h3>
    <p align="center"\>
       A decentralized stablecoin system built with Solidity, Chainlink, and Foundry.
    </p>
@@ -20,7 +24,7 @@
    </ol>
 </details>
 
------
+---
 
 ## About The Project
 
@@ -30,22 +34,22 @@ The core logic, including minting, redeeming, and liquidating DSC, is managed by
 
 ### Features
 
-  * **Decentralized Stablecoin (DSC)**: An ERC20 token with the symbol "DSC".
-  * **Collateralized Debt Position**: Users deposit approved collateral (e.g., ETH, BTC) to mint DSC.
-  * **Overcollateralization**: A minimum health factor of `1e18` (100%) ensures the value of collateral is always greater than the minted debt.
-  * **Liquidation**: If a user's health factor drops below the threshold, their collateral can be liquidated to cover the debt.
-  * **Chainlink Price Feeds**: Relies on Chainlink oracles to fetch and validate real-time price data for collateral assets.
+- **Decentralized Stablecoin (DSC)**: An ERC20 token with the symbol "DSC".
+- **Collateralized Debt Position**: Users deposit approved collateral (e.g., ETH, BTC) to mint DSC.
+- **Overcollateralization**: A minimum health factor of `1e18` (100%) ensures the value of collateral is always greater than the minted debt.
+- **Liquidation**: If a user's health factor drops below the threshold, their collateral can be liquidated to cover the debt.
+- **Chainlink Price Feeds**: Relies on Chainlink oracles to fetch and validate real-time price data for collateral assets.
 
 ### Built With
 
-  * **Solidity**
-  * **Foundry**: The development framework for building, testing, and deploying the contracts.
-  * **Chainlink**: Provides decentralized oracle services for secure price feeds.
-  * **OpenZeppelin**: Used for secure and community-audited smart contract components like ERC20 and ReentrancyGuard.
+- **Solidity**
+- **Foundry**: The development framework for building, testing, and deploying the contracts.
+- **Chainlink**: Provides decentralized oracle services for secure price feeds.
+- **OpenZeppelin**: Used for secure and community-audited smart contract components like ERC20 and ReentrancyGuard.
 
 <p align="right"><a href="\#readme-top">back to top</a></p>
 
------
+---
 
 ## System Flowchart
 
@@ -71,7 +75,7 @@ graph TD
 
 <p align="right"><a href="\#readme-top">back to top</a></p>
 
------
+---
 
 ## Contracts
 
@@ -89,7 +93,7 @@ A utility library designed to check the freshness of data from Chainlink price f
 
 <p align="right"><a href="\#readme-top">back to top</a></p>
 
------
+---
 
 ## Deployment
 
