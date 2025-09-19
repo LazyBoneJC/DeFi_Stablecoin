@@ -53,7 +53,7 @@ The core logic, including minting, redeeming, and liquidating DSC, is managed by
 
 ## System Flowchart
 
-Here is a flowchart illustrating the core interaction within the system. Note that this requires a Markdown viewer that supports Mermaid syntax to be rendered as an image.
+Here is a flowchart illustrating the core interaction within the system.
 
 ```mermaid
 graph TD
