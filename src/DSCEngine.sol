@@ -26,6 +26,7 @@ pragma solidity ^0.8.18;
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";
 
@@ -69,8 +70,16 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant MIN_HEALTH_FACTOR = 1e18; // 1 * 10^18
     uint256 private constant LIQUIDATION_BONUS = 10; // 10%
 
+    /// @dev Mapping of token address to price feed address
     mapping(address token => address priceFeed) private s_priceFeeds; // token address -> price feed address
+
+    /// @dev Mapping of token address to decimals
+    mapping(address token => uint8 decimals) private s_tokenDecimals; // token address -> token decimals
+
+    /// @dev Amount of collateral deposited by each user
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited; // user address -> token address -> collateral amount
+
+    /// @dev Amount of DSC minted by each user
     mapping(address user => uint256 amountDscMinted) private s_DSCMinted;
     address[] private s_collateralTokens;
 
@@ -106,6 +115,9 @@ contract DSCEngine is ReentrancyGuard {
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
             s_collateralTokens.push(tokenAddresses[i]);
+            // aderyn-ignore-next-line(reentrancy-state-change)
+            uint8 tokenDecimals = IERC20Metadata(tokenAddresses[i]).decimals();
+            s_tokenDecimals[tokenAddresses[i]] = tokenDecimals;
         }
 
         // 透過地址(dscAddress)，創建一個符合 DecentralizedStableCoin 介面的合約實例
@@ -232,6 +244,16 @@ contract DSCEngine is ReentrancyGuard {
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+
+        // H2-Fix: If the user doesn't have enough collateral to cover the bonus,
+        // give the liquidator all of their collateral of that type.
+        uint256 userCollateralBalance = s_collateralDeposited[user][collateral];
+        if (totalCollateralToRedeem > userCollateralBalance) {
+            totalCollateralToRedeem = userCollateralBalance;
+        }
+
+        // Burn DSC equal to debtToCover
+        // Figure out how much collateral to recover based on how much burnt
         _redeemCollateral(user, msg.sender, collateral, totalCollateralToRedeem);
         _burnDsc(debtToCover, user, msg.sender);
 
@@ -336,11 +358,22 @@ contract DSCEngine is ReentrancyGuard {
 
     //--- Public & External View Functions ---
 
+    /**
+     * @notice Get the amount of collateral tokens needed to mint a specific USD amount.
+     * @param token The address of the collateral token contract.
+     * @param usdAmountInWei The amount of USD to convert to collateral tokens.
+     *
+     * [25'0922] Bug Fix: [H-1] Theft of collateral tokens with fewer than 18 decimals
+     */
     function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
         // 1 ETH = $1000. The returned value from CL will be 1000 * 1e8
-        return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION); // (1000e18 * 1e18) / (1000 * 1e8 * 1e10) = 1e18
+        // return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION); // (1000e18 * 1e18) / (1000 * 1e8 * 1e10) = 1e18
+
+        uint8 tokenDecimals = s_tokenDecimals[token];
+        uint8 priceFeedDecimals = priceFeed.decimals();
+        return (usdAmountInWei * (10 ** (priceFeedDecimals + tokenDecimals)) / (uint256(price) * PRECISION)); // (1000e18 * 1e8 * 1e8) / (1000 * 1e8 * 1e18) = 1e8
     }
 
     function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
@@ -357,11 +390,25 @@ contract DSCEngine is ReentrancyGuard {
         return totalCollateralValueInUsd;
     }
 
+    /**
+     * @notice Get the USD value of a specific amount of a collateral token.
+     * @param token The address of the collateral token contract.
+     * @param amount The amount of the collateral token to convert to USD.
+     * @return The USD value of the specified amount of the collateral token.
+     *
+     * [25'0922] Bug Fix: [H-1] Theft of collateral tokens with fewer than 18 decimals
+     */
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
         // 1 ETH = $1000. The returned value from CL will be 1000 * 1e8
-        return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION; // ((1000 * 1e8 * 1e10) * 1000) / 1e18
+        // return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION; // ((1000 * 1e8 * 1e10) * 1000) / 1e18
+
+        // Example: 1 WBTC (amount = 1e8) priced at $30,000 (price = 30000e8)
+        // should return 30000e18
+        uint8 tokenDecimals = s_tokenDecimals[token];
+        uint8 priceFeedDecimals = priceFeed.decimals();
+        return (uint256(price) * amount * PRECISION) / (10 ** (priceFeedDecimals + tokenDecimals)); // (30000e8 * 1e8 * 1e18) / (1e8 * 1e8) = 30000e18
     }
 
     function getAccountInformation(address user)

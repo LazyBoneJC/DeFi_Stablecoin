@@ -3,8 +3,9 @@ pragma solidity ^0.8.18;
 
 import {Script} from "forge-std/Script.sol";
 import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
-import {ERC20Mock} from
-    "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/mocks/ERC20Mock.sol";
+// import {ERC20Mock} from
+//     "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/mocks/ERC20Mock.sol";
+import {ERC20DecimalsMock} from "../test/mocks/ERC20DecimalsMock.sol";
 
 contract HelperConfig is Script {
     // Configuration variables and helper functions for the DSC system
@@ -16,7 +17,10 @@ contract HelperConfig is Script {
         uint256 deployerKey;
     }
 
-    uint8 public constant DECIMALS = 8;
+    // uint8 public constant DECIMALS = 8;
+    uint8 public constant FEED_DECIMALS = 8;
+    uint8 public constant WETH_DECIMALS = 18;
+    uint8 public constant WBTC_DECIMALS = 8;
     int256 public constant ETH_USD_PRICE = 2000e8;
     int256 public constant BTC_USD_PRICE = 1000e8;
     uint256 public constant DEFAULT_ANVIL_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
@@ -48,11 +52,15 @@ contract HelperConfig is Script {
 
         vm.startBroadcast();
 
-        MockV3Aggregator ethUsdPriceFeed = new MockV3Aggregator(DECIMALS, ETH_USD_PRICE);
-        ERC20Mock weth = new ERC20Mock("Wrapped Ether", "WETH", msg.sender, 1000e8);
+        MockV3Aggregator ethUsdPriceFeed = new MockV3Aggregator(FEED_DECIMALS, ETH_USD_PRICE);
+        // ERC20Mock weth = new ERC20Mock("Wrapped Ether", "WETH", msg.sender, 1000 * 10 ** WETH_DECIMALS);
+        ERC20DecimalsMock weth = new ERC20DecimalsMock("Wrapped Ether", "WETH", WETH_DECIMALS);
+        weth.mint(msg.sender, 1000 * 10 ** WETH_DECIMALS);
 
-        MockV3Aggregator btcUsdPriceFeed = new MockV3Aggregator(DECIMALS, BTC_USD_PRICE);
-        ERC20Mock wbtc = new ERC20Mock("Wrapped Bitcoin", "WBTC", msg.sender, 1000e8);
+        MockV3Aggregator btcUsdPriceFeed = new MockV3Aggregator(FEED_DECIMALS, BTC_USD_PRICE);
+        // ERC20Mock wbtc = new ERC20Mock("Wrapped Bitcoin", "WBTC", msg.sender, 1000 * 10 ** WBTC_DECIMALS);
+        ERC20DecimalsMock wbtc = new ERC20DecimalsMock("Wrapped Bitcoin", "WBTC", WBTC_DECIMALS);
+        wbtc.mint(msg.sender, 1000 * 10 ** WBTC_DECIMALS);
 
         vm.stopBroadcast();
 
