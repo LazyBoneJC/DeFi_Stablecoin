@@ -10,6 +10,9 @@
    <p align="center"\>
       A decentralized stablecoin system built with Solidity, Chainlink, and Foundry.
    </p>
+   <p align="center"\>
+     <a href="https://lazybonejc.github.io/ywc-s-blog/2025/09/18/Building-a-Decentralized-Stablecoin-A-Deep-Dive-into-the-DeFi-Stablecoin-Project/">Blog: Building a Decentralized Stablecoin: A Deep Dive into the DeFi Stablecoin Project</a>
+   </p>
 </div>
 
 <details>
